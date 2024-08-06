@@ -10,14 +10,17 @@ import ForgeReconciler, {
   Label,
   RequiredAsterisk,
   useForm,
+  StackBarChart,
+  Heading,
+  Fragment,
+  Table,
+  Row,
+  Cell,
+  Link,
 } from "@forge/react";
-import { invoke, view } from "@forge/bridge";
-import { StackBarChart } from '@forge/react';
-
-const FIELD_NAME = "field-name";
+import { requestJira } from '@forge/bridge';
 
 const arrayData = [
-  // in this example ['x value', 'y value', 'color value']
   ['Apple', 4, 'Dog'],
   ['Apple', 5, 'Cat'],
   ['Apple', 11, 'Horse'],
@@ -34,9 +37,27 @@ const arrayData = [
   ['Dragonfruit', 2, 'Cat'],
   ['Dragonfruit', 5, 'Horse'],
   ['Dragonfruit', 8, 'Elephant'],
-]
+];
 
-export const Test = () => {
+const fetchOpenIssues = async (projectKey) => {
+  try {
+    const jql = `project = ${projectKey} AND statusCategory != Done`;
+    const response = await requestJira(`/rest/api/3/search?jql=${encodeURIComponent(jql)}`);
+
+    if (!response.ok) {
+      throw new Error(`Error fetching issues: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.issues;
+    console.log(data.issues);
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
+const Chart = () => {
   return (
     <>
       <Text>test</Text>
@@ -45,17 +66,25 @@ export const Test = () => {
         xAccessor={0}
         yAccessor={1}
         colorAccessor={2}
-      />;
+      />
     </>
-  )
+  );
 };
 
+const OpenIssues = ({ projectKey }) => {
+  const [issues, setIssues] = useState([]);
 
-// export const Edit = () => {
-//   return (
-//     <Text>caner</Text>
-//   );
-// };
+  useEffect(() => {
+    const getIssues = async () => {
+      const openIssues = await fetchOpenIssues(projectKey);
+      setIssues(openIssues);
+    };
+    getIssues();
+  }, [projectKey]);
+
+  return <Text>test openissue</Text>;
+};
+
 const View = () => {
   return <Text>View Mode</Text>;
 };
@@ -65,8 +94,12 @@ const App = () => {
   if (!context) {
     return "Loading...";
   }
-  debugger;
-  return context.extension.entryPoint === "edit" ? <Test /> : <View />;
+
+  return (
+    <>
+      <OpenIssues projectKey="KAN" />
+    </>
+  );
 };
 
 ForgeReconciler.render(
