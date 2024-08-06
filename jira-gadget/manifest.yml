@@ -1,0 +1,23 @@
+modules:
+  jira:dashboardGadget:
+    - key: jira-gadget-dashboard-gadget-ui-kit-2-hello-world-gadget
+      title: jira-gadget
+      description: A hello world dashboard gadget.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: main-resource
+      render: native
+      resolver:
+        function: resolver
+      edit:
+        resource: main-resource
+        render: native
+  function:
+    - key: resolver
+      handler: index.handler
+resources:
+  - key: main-resource
+    path: src/frontend/index.jsx
+app:
+  runtime:
+    name: nodejs18.x
+  id: ari:cloud:ecosystem::app/f4786056-ca81-41ef-9d2a-9baa33a64c14
