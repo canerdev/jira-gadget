@@ -3,21 +3,25 @@ import ForgeReconciler, {
   Text,
   useProductContext,
   StackBarChart,
+  Select,
 } from "@forge/react";
-import { requestJira } from '@forge/bridge';
+import { requestJira, invoke } from '@forge/bridge';
 
-const arrayData = [
-  ['pzt', 4, 'Dog'],
-  ['pzt', 11, 'Horse'],
-  ['pzt', 15, 'Elephant'],
-  ['sali', 5, 'Dog'],
-  ['sali', 10, 'Cat'],
-  ['Kumquat', 25, 'Horse'],
-  ['Kumquat', 10, 'Elephant'],
-  ['Dragonfruit', 2, 'Cat'],
-  ['Dragonfruit', 5, 'Horse'],
-  ['Dragonfruit', 8, 'Elephant'],
-];
+function duzenleListe(arrayList) {
+  const sonuc = {};
+
+  arrayList.forEach(([tarih, sayi, kategori]) => {
+    const key = `${tarih}-${kategori}`;
+
+    if (!sonuc[key]) {
+      sonuc[key] = [tarih, sayi, kategori];
+    } else {
+      sonuc[key][1] += sayi;
+    }
+  });
+
+  return Object.values(sonuc);
+}
 
 const FetchOpenIssues = async (projectKey) => {
   try {
@@ -29,7 +33,6 @@ const FetchOpenIssues = async (projectKey) => {
     }
 
     const data = await response.json();
-    // console.log(data.issues);
     return data.issues;
   } catch (error) {
     console.error(error);
@@ -37,70 +40,88 @@ const FetchOpenIssues = async (projectKey) => {
   }
 };
 
-const data1 = [];
+const Chart = ({ projectKey }) => {
+  const [data1, setData1] = useState([]);
 
-(async function extractData() {
-  console.log("extract data function");
+  useEffect(() => {
+    const extractData = async () => {
+      const issues = await FetchOpenIssues(projectKey);
+      const newData = [];
 
-  const projectKey = "KAN";
-  const issues = await FetchOpenIssues(projectKey); // Ensure this function is defined
+      for (let i = 0; i < issues.length; i++) {
+        for (let j = 0; j < issues[i].fields.labels.length; j++) {
+          newData.push([issues[i].fields.created.split('.')[0], 1, issues[i].fields.labels[j]]);
+        }
+      }
 
-  console.log(issues);
-  let idx = 0;
-  for (let i = 0; i < issues.length; i++) {
-    for (let j = 0; j < issues[i].fields.labels.length; j++) {
-      data1.push([idx, i + j, issues[i].fields.labels[j]]);
-      console.log("inside inner loop");
-      idx++;
-    }
-  }
+      setData1(newData);
+    };
 
-  console.log(data1);
-})();
+    extractData();
+  }, [projectKey]);
 
-
-
-const Chart = () => {
-  console.log("chart component");
-  console.log(data1);
-  console.log(arrayData)
   return (
-    <>
-      <Text>test</Text>
-      <StackBarChart
-        data={data1}
-        xAccessor={0}
-        yAccessor={1}
-        colorAccessor={2}
-      />
-    </>
-  );
+    <StackBarChart
+      data={duzenleListe(data1)}
+      xAccessor={0}
+      yAccessor={1}
+      colorAccessor={2}
+    />
+  )
 };
 
-// const OpenIssues = ({ projectKey }) => {
-//   const [issues, setIssues] = useState([]);
+const Projects = () => {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-//   useEffect(() => {
-//     const getIssues = async () => {
-//       const openIssues = await fetchOpenIssues(projectKey);
-//       setIssues(openIssues);
-//     };
-//     getIssues();
-//   }, [projectKey]);
-// };
+  useEffect(() => {
+    const test = async () => {
+      try {
+        const projectsData = await invoke('fetchProjects', {});
+        setProjects(projectsData);
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-const View = () => {
-  return <Text>View Mode</Text>;
+    test();
+  }, []);
+
+  console.log(projects);
+  
+  const options = projects.map(project => ({
+    label: project.name,
+    value: project.key,
+  }));
+
+  if (loading) {
+    return <Text>Loading projects...</Text>;
+  }
+
+  return (
+    <Select
+      appearance="default"
+      label="Select Project"
+      options={options}
+    />
+  );
 };
 
 const App = () => {
   const context = useProductContext();
+  const [selectedProject, setSelectedProject] = useState();
+  
   if (!context) {
     return "Loading...";
   }
 
   return (
-    <Chart />
+    <>
+      <Projects />
+      <Chart projectKey="KAN" />
+    </>
   );
 };
 
