@@ -24,30 +24,35 @@ function duzenleListe(arrayList) {
 }
 
 const FetchOpenIssues = async (projectKey) => {
-  try {
-    const jql = `project = ${projectKey} AND statusCategory != Done`;
-    const response = await requestJira(`/rest/api/3/search?jql=${encodeURIComponent(jql)}`);
+  if (projectKey) {
+    try {
+      const jql = `project = ${projectKey} AND statusCategory != Done`;
+      const response = await requestJira(`/rest/api/3/search?jql=${encodeURIComponent(jql)}`);
 
-    if (!response.ok) {
-      throw new Error(`Error fetching issues: ${response.status} ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Error fetching issues: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("open issue fetch")
+
+      return data.issues;
+    } catch (error) {
+      console.error(error);
+      return [];
     }
-
-    const data = await response.json();
-    return data.issues;
-  } catch (error) {
-    console.error(error);
-    return [];
   }
 };
 
 const Chart = ({ projectKey }) => {
   const [data1, setData1] = useState([]);
-  console.log(projectKey);
-  
+  // console.log(projectKey);
+
   useEffect(() => {
     const extractData = async () => {
       const issues = await FetchOpenIssues(projectKey);
       const newData = [];
+      console.log("chart fetch")
 
       for (let i = 0; i < issues.length; i++) {
         for (let j = 0; j < issues[i].fields.labels.length; j++) {
@@ -76,10 +81,12 @@ const Projects = (props) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const test = async () => {
+    const fetchProjects = async () => {
       try {
         const projectsData = await invoke('fetchProjects', {});
         setProjects(projectsData);
+
+        console.log("project fetch")
       } catch (error) {
         console.error('Error fetching projects:', error);
       } finally {
@@ -87,21 +94,21 @@ const Projects = (props) => {
       }
     };
 
-    test();
+    fetchProjects();
   }, []);
 
-  console.log(projects);
+  // console.log(projects);
 
   const options = projects.map(project => ({
     label: project.name,
     value: project.key,
   }));
 
-  console.log(options);
+  // console.log(options);
 
-  if (loading) {
-    return <Text>Loading projects...</Text>;
-  }
+  // if (loading) {
+  //   return <Text>Loading projects...</Text>;
+  // }
 
   return (
     <Select
@@ -117,9 +124,9 @@ const App = () => {
   const context = useProductContext();
   const [selectedProject, setSelectedProject] = useState();
 
-  if (!context) {
-    return "Loading...";
-  }
+  // if (!context) {
+  //   return "Loading...";
+  // }
 
   return (
     <>

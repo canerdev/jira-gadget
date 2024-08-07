@@ -11,6 +11,7 @@ export const fetchProjects = async () => {
         Accept: "application/json",
       },
     });
+  console.log("fetchprojects fetch");
 
   if (!response.ok) {
     throw new Error(
@@ -19,13 +20,15 @@ export const fetchProjects = async () => {
   }
 
   const projectsData = await response.json();
-  console.log(projectsData.values);
+  // console.log(projectsData.values);
   return projectsData.values;
 };
 
 resolver.define("fetchProjects", async (req) => {
   try {
     const projects = await fetchProjects();
+    console.log("backend define fetch");
+
     return projects;
   } catch (error) {
     console.error(error);
