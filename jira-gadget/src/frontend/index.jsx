@@ -42,7 +42,8 @@ const FetchOpenIssues = async (projectKey) => {
 
 const Chart = ({ projectKey }) => {
   const [data1, setData1] = useState([]);
-
+  console.log(projectKey);
+  
   useEffect(() => {
     const extractData = async () => {
       const issues = await FetchOpenIssues(projectKey);
@@ -70,7 +71,7 @@ const Chart = ({ projectKey }) => {
   )
 };
 
-const Projects = () => {
+const Projects = (props) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -90,11 +91,13 @@ const Projects = () => {
   }, []);
 
   console.log(projects);
-  
+
   const options = projects.map(project => ({
     label: project.name,
     value: project.key,
   }));
+
+  console.log(options);
 
   if (loading) {
     return <Text>Loading projects...</Text>;
@@ -105,6 +108,7 @@ const Projects = () => {
       appearance="default"
       label="Select Project"
       options={options}
+      onChange={(e) => props.selectionHandler(e.value)}
     />
   );
 };
@@ -112,15 +116,15 @@ const Projects = () => {
 const App = () => {
   const context = useProductContext();
   const [selectedProject, setSelectedProject] = useState();
-  
+
   if (!context) {
     return "Loading...";
   }
 
   return (
     <>
-      <Projects />
-      <Chart projectKey="KAN" />
+      <Projects selectionHandler={setSelectedProject} />
+      <Chart projectKey={selectedProject} />
     </>
   );
 };
