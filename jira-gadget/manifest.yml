@@ -14,8 +14,6 @@ modules:
   function:
     - key: resolver
       handler: index.handler
-    - key: fetchProjects
-      handler: index.fetchProjects
 resources:
   - key: main-resource
     path: src/frontend/index.jsx

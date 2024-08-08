@@ -1,26 +1,25 @@
 import React, { useEffect, useState } from "react";
 import ForgeReconciler, {
-  Text,
   useProductContext,
   StackBarChart,
   Select,
 } from "@forge/react";
 import { requestJira, invoke } from '@forge/bridge';
 
-function duzenleListe(arrayList) {
-  const sonuc = {};
+function formatData(arr) {
+  const res = {};
 
-  arrayList.forEach(([tarih, sayi, kategori]) => {
-    const key = `${tarih}-${kategori}`;
+  arr.forEach(([date, count, category]) => {
+    const key = `${date}-${category}`;
 
-    if (!sonuc[key]) {
-      sonuc[key] = [tarih, sayi, kategori];
+    if (!res[key]) {
+      res[key] = [date, count, category];
     } else {
-      sonuc[key][1] += sayi;
+      res[key][1] += count;
     }
   });
 
-  return Object.values(sonuc);
+  return Object.values(res);
 }
 
 const FetchOpenIssues = async (projectKey) => {
@@ -32,10 +31,8 @@ const FetchOpenIssues = async (projectKey) => {
       if (!response.ok) {
         throw new Error(`Error fetching issues: ${response.status} ${response.statusText}`);
       }
-
       const data = await response.json();
-      console.log("open issue fetch")
-
+      
       return data.issues;
     } catch (error) {
       console.error(error);
@@ -45,22 +42,19 @@ const FetchOpenIssues = async (projectKey) => {
 };
 
 const Chart = ({ projectKey }) => {
-  const [data1, setData1] = useState([]);
-  // console.log(projectKey);
+  const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
     const extractData = async () => {
       const issues = await FetchOpenIssues(projectKey);
-      const newData = [];
-      console.log("chart fetch")
+      const tempData = [];
 
       for (let i = 0; i < issues.length; i++) {
         for (let j = 0; j < issues[i].fields.labels.length; j++) {
-          newData.push([issues[i].fields.created.split('.')[0], 1, issues[i].fields.labels[j]]);
+          tempData.push([issues[i].fields.created.split('T')[0], 1, issues[i].fields.labels[j]]);
         }
       }
-
-      setData1(newData);
+      setChartData(tempData);
     };
 
     extractData();
@@ -68,7 +62,7 @@ const Chart = ({ projectKey }) => {
 
   return (
     <StackBarChart
-      data={duzenleListe(data1)}
+      data={formatData(chartData)}
       xAccessor={0}
       yAccessor={1}
       colorAccessor={2}
@@ -78,7 +72,6 @@ const Chart = ({ projectKey }) => {
 
 const Projects = (props) => {
   const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -89,26 +82,16 @@ const Projects = (props) => {
         console.log("project fetch")
       } catch (error) {
         console.error('Error fetching projects:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchProjects();
   }, []);
 
-  // console.log(projects);
-
   const options = projects.map(project => ({
     label: project.name,
     value: project.key,
   }));
-
-  // console.log(options);
-
-  // if (loading) {
-  //   return <Text>Loading projects...</Text>;
-  // }
 
   return (
     <Select
@@ -121,12 +104,8 @@ const Projects = (props) => {
 };
 
 const App = () => {
-  const context = useProductContext();
+  // const context = useProductContext();
   const [selectedProject, setSelectedProject] = useState();
-
-  // if (!context) {
-  //   return "Loading...";
-  // }
 
   return (
     <>
